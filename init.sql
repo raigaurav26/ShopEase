@@ -1,0 +1,5 @@
+CREATE DATABASE IF NOT EXISTS shopease_auth;
+CREATE DATABASE IF NOT EXISTS shopease_products;
+CREATE DATABASE IF NOT EXISTS shopease_orders;
+CREATE DATABASE IF NOT EXISTS shopease_payments;
+CREATE DATABASE IF NOT EXISTS shopease_inventory;
