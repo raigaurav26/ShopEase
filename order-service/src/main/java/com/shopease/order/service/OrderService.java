@@ -4,6 +4,8 @@ import com.shopease.order.client.InventoryClient;
 import com.shopease.order.client.PaymentClient;
 import com.shopease.order.client.ProductClient;
 import com.shopease.order.dto.*;
+import com.shopease.order.event.OrderPlacedEvent;
+import com.shopease.order.kafka.OrderProducer;
 import com.shopease.order.model.Order;
 import com.shopease.order.model.OrderItem;
 import com.shopease.order.repository.OrderItemRepository;
@@ -33,6 +35,9 @@ public class OrderService {
 
     @Autowired
     private PaymentClient paymentClient;
+
+    @Autowired
+    private OrderProducer orderProducer;
 
     public OrderResponse placeOrder(OrderRequest request) {
         List<OrderItem> orderItems = new ArrayList<>();
@@ -74,6 +79,15 @@ public class OrderService {
 
         order.setStatus("CONFIRMED");
         orderRepository.save(order);
+
+        OrderPlacedEvent event = new OrderPlacedEvent(
+                order.getId(),
+                orderItems.get(0).getProductId(),
+                orderItems.get(0).getQuantity(),
+                totalAmount,
+                "CARD"
+        );
+        orderProducer.sendOrderPlacedEvent(event);
 
         return mapToResponse(order);
     }
