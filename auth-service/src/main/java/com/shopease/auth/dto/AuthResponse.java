@@ -2,27 +2,37 @@ package com.shopease.auth.dto;
 
 public class AuthResponse {
 
-    private String token;
+    private String accessToken;
+    private String refreshToken;
+    private String tokenType = "Bearer";
+    private long expiresIn;
     private String message;
 
-    public AuthResponse(String token, String message) {
-        this.token = token;
+    public AuthResponse(String accessToken, String refreshToken, long expiresIn, String message) {
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
+        this.expiresIn = expiresIn;
         this.message = message;
     }
 
-    public String getToken() {
-        return token;
+    public String getAccessToken() {
+        return accessToken;
     }
 
-    public void setToken(String token) {
-        this.token = token;
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public String getTokenType() {
+        return tokenType;
+    }
+
+    /** Lifetime of the access token in seconds. */
+    public long getExpiresIn() {
+        return expiresIn;
     }
 
     public String getMessage() {
         return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
     }
 }

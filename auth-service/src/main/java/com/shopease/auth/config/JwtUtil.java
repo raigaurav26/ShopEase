@@ -3,29 +3,42 @@ package com.shopease.auth.config;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Date;
 
 @Component
 public class JwtUtil {
 
-    private String secret = "mySecretKey12345678901234567890123456789012345678";
-    private long expiration = 86400000;
+    private final SecretKey signingKey;
+    private final Duration accessTokenTtl;
 
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+    public JwtUtil(@Value("${jwt.secret}") String secret,
+                   @Value("${jwt.access-token-ttl:15m}") Duration accessTokenTtl) {
+        if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("jwt.secret must be at least 32 bytes long");
+        }
+        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.accessTokenTtl = accessTokenTtl;
     }
 
     public String generateToken(String email, String role) {
+        Date now = new Date();
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey())
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + accessTokenTtl.toMillis()))
+                .signWith(signingKey)
                 .compact();
+    }
+
+    public long getAccessTokenTtlSeconds() {
+        return accessTokenTtl.toSeconds();
     }
 
     public String extractEmail(String token) {
@@ -47,7 +60,7 @@ public class JwtUtil {
 
     private Claims getClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

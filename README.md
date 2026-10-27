@@ -102,8 +102,21 @@ docker-compose up --build
 ### Auth (`/api/auth`)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login and get JWT |
+| POST | `/api/auth/register` | Register new user, returns a token pair |
+| POST | `/api/auth/login` | Sign in, returns a token pair |
+| POST | `/api/auth/refresh` | Swap a refresh token for a new token pair |
+| POST | `/api/auth/logout` | Revoke the session a refresh token belongs to |
+
+### How sign-in works
+
+- **Short-lived access tokens.** Login returns a JWT access token that expires after 15 minutes and an opaque refresh token that lasts 7 days.
+- **Refresh token rotation.** Every call to `/refresh` revokes the token it received and returns a new one. Refresh tokens are stored only as SHA-256 hashes, and the lookup takes a row lock so two parallel refreshes with the same token can't both succeed.
+- **Reuse detection.** If a refresh token that was already rotated is used again, someone has a copy of it, so every session of that user is revoked and they must sign in again.
+- **Logout** revokes the whole session (the chain of rotated tokens from one login), not just the latest token.
+- **Account lockout.** After 5 wrong passwords in a row the account is locked for 15 minutes (`423 Locked`).
+- **No account enumeration.** An unknown email and a wrong password return the same `401 Invalid email or password`, and an unknown email still runs a BCrypt check so both take the same time.
+- **Validation.** Requests are validated with Bean Validation (valid email, password of 8 to 72 characters) and errors come back per field.
+- **Configuration.** The signing key comes from the `JWT_SECRET` environment variable (at least 32 bytes). Token lifetimes and lockout limits are set under `jwt.*` and `auth.lockout.*` in `application.yml`.
 
 ### Products (`/api/products`)
 | Method | Endpoint | Description |
@@ -150,6 +163,25 @@ POST /api/auth/register
     "name": "Gaurav",
     "email": "gaurav@example.com",
     "password": "password123"
+}
+```
+
+### Login response
+```json
+{
+    "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+    "refreshToken": "3q2-7wV9...",
+    "tokenType": "Bearer",
+    "expiresIn": 900,
+    "message": "Login successful"
+}
+```
+
+### Refresh or logout
+```json
+POST /api/auth/refresh
+{
+    "refreshToken": "3q2-7wV9..."
 }
 ```
 

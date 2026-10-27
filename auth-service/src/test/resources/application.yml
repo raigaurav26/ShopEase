@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:auth;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+
+jwt:
+  secret: test-secret-0123456789abcdef0123456789abcdef
+  access-token-ttl: 15m
+  refresh-token-ttl: 7d
+
+auth:
+  lockout:
+    max-attempts: 5
+    duration: 15m
+
+eureka:
+  client:
+    enabled: false

@@ -13,6 +13,17 @@ spring:
       ddl-auto: update
     show-sql: true
 
+jwt:
+  # Set JWT_SECRET in every environment except local development (at least 32 characters)
+  secret: ${JWT_SECRET:local-dev-secret-change-me-0123456789abcdef}
+  access-token-ttl: 15m
+  refresh-token-ttl: 7d
+
+auth:
+  lockout:
+    max-attempts: 5
+    duration: 15m
+
 eureka:
   client:
     service-url:

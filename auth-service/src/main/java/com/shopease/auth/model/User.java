@@ -7,6 +7,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Column;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "users")
 public class User {
@@ -23,6 +25,10 @@ public class User {
     private String password;
 
     private String role = "CUSTOMER";
+
+    private int failedLoginAttempts;
+
+    private Instant lockedUntil;
 
     public User() {
     }
@@ -72,5 +78,21 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public int getFailedLoginAttempts() {
+        return failedLoginAttempts;
+    }
+
+    public void setFailedLoginAttempts(int failedLoginAttempts) {
+        this.failedLoginAttempts = failedLoginAttempts;
+    }
+
+    public Instant getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public void setLockedUntil(Instant lockedUntil) {
+        this.lockedUntil = lockedUntil;
     }
 }
