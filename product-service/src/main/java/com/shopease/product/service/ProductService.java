@@ -2,6 +2,7 @@ package com.shopease.product.service;
 
 import com.shopease.product.dto.ProductRequest;
 import com.shopease.product.dto.ProductResponse;
+import com.shopease.product.exception.ProductNotFoundException;
 import com.shopease.product.model.Product;
 import com.shopease.product.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +39,7 @@ public class ProductService {
 
     public ProductResponse getProductById(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+                .orElseThrow(() -> new ProductNotFoundException(id));
         return mapToResponse(product);
     }
 
@@ -58,7 +59,7 @@ public class ProductService {
 
     public ProductResponse updateProduct(Long id, ProductRequest request) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+                .orElseThrow(() -> new ProductNotFoundException(id));
 
         product.setName(request.getName());
         product.setDescription(request.getDescription());
@@ -72,7 +73,9 @@ public class ProductService {
     }
 
     public void deleteProduct(Long id) {
-        productRepository.deleteById(id);
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
+        productRepository.delete(product);
     }
 
     private ProductResponse mapToResponse(Product product) {

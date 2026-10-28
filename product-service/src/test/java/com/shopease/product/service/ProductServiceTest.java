@@ -2,6 +2,7 @@ package com.shopease.product.service;
 
 import com.shopease.product.dto.ProductRequest;
 import com.shopease.product.dto.ProductResponse;
+import com.shopease.product.exception.ProductNotFoundException;
 import com.shopease.product.model.Product;
 import com.shopease.product.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,7 +96,7 @@ class ProductServiceTest {
     void getProductById_ShouldThrowException_WhenNotFound() {
         when(productRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> productService.getProductById(99L));
+        assertThrows(ProductNotFoundException.class, () -> productService.getProductById(99L));
     }
 
     @Test
@@ -121,10 +122,17 @@ class ProductServiceTest {
     @Test
     void deleteProduct_ShouldCallRepository() {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-        doNothing().when(productRepository).deleteById(1L);
 
         productService.deleteProduct(1L);
 
-        verify(productRepository, times(1)).deleteById(1L);
+        verify(productRepository, times(1)).delete(product);
+    }
+
+    @Test
+    void deleteProduct_ShouldThrowException_WhenNotFound() {
+        when(productRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(ProductNotFoundException.class, () -> productService.deleteProduct(99L));
+        verify(productRepository, never()).delete(any(Product.class));
     }
 }

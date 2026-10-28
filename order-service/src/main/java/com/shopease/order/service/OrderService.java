@@ -40,6 +40,10 @@ public class OrderService {
     private OrderProducer orderProducer;
 
     public OrderResponse placeOrder(OrderRequest request) {
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Order must contain at least one item");
+        }
+
         List<OrderItem> orderItems = new ArrayList<>();
         double totalAmount = 0;
 

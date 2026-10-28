@@ -1,5 +1,7 @@
 # ShopEase - E-Commerce Microservices Platform
 
+[![CI](https://github.com/raigaurav26/ShopEase/actions/workflows/ci.yml/badge.svg)](https://github.com/raigaurav26/ShopEase/actions/workflows/ci.yml)
+
 An e-commerce backend built with **Java 17, Spring Boot 3, Spring Cloud, and MySQL** using microservices architecture.
 
 ## Architecture
