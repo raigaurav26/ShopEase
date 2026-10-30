@@ -2,9 +2,12 @@ package com.shopease.inventory.service;
 
 import com.shopease.inventory.dto.InventoryRequest;
 import com.shopease.inventory.dto.InventoryResponse;
+import com.shopease.inventory.exception.InsufficientStockException;
+import com.shopease.inventory.exception.InventoryNotFoundException;
 import com.shopease.inventory.model.Inventory;
 import com.shopease.inventory.repository.InventoryRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,6 +22,12 @@ public class InventoryService {
     }
 
     public InventoryResponse addStock(InventoryRequest request) {
+        if (request.getProductId() == null) {
+            throw new IllegalArgumentException("productId is required");
+        }
+        if (request.getQuantity() < 0) {
+            throw new IllegalArgumentException("quantity cannot be negative");
+        }
         Inventory inventory = new Inventory();
         inventory.setProductId(request.getProductId());
         inventory.setSkuCode(request.getSkuCode());
@@ -28,27 +37,24 @@ public class InventoryService {
     }
 
     public InventoryResponse getStockByProductId(Long productId) {
-        Inventory inventory = inventoryRepository.findByProductId(productId)
-                .orElseThrow(() -> new RuntimeException("Inventory not found for productId: " + productId));
-        return mapToResponse(inventory);
+        return mapToResponse(findInventory(productId));
     }
 
     public boolean isInStock(Long productId) {
-        Inventory inventory = inventoryRepository.findByProductId(productId)
-                .orElseThrow(() -> new RuntimeException("Inventory not found for productId: " + productId));
-        return inventory.getQuantity() > 0;
+        return findInventory(productId).getQuantity() > 0;
     }
 
+    @Transactional
     public InventoryResponse reduceStock(Long productId, int qty) {
-        Inventory inventory = inventoryRepository.findByProductId(productId)
-                .orElseThrow(() -> new RuntimeException("Inventory not found for productId: " + productId));
-        if (inventory.getQuantity() < qty) {
-            throw new RuntimeException("Not enough stock for productId: " + productId
-                    + ". Available: " + inventory.getQuantity() + ", Requested: " + qty);
+        if (qty <= 0) {
+            throw new IllegalArgumentException("qty must be greater than 0");
         }
-        inventory.setQuantity(inventory.getQuantity() - qty);
-        Inventory updated = inventoryRepository.save(inventory);
-        return mapToResponse(updated);
+        int updated = inventoryRepository.decrementIfAvailable(productId, qty);
+        Inventory inventory = findInventory(productId);
+        if (updated == 0) {
+            throw new InsufficientStockException(productId, inventory.getQuantity(), qty);
+        }
+        return mapToResponse(inventory);
     }
 
     public List<InventoryResponse> getAllStock() {
@@ -56,6 +62,11 @@ public class InventoryService {
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    private Inventory findInventory(Long productId) {
+        return inventoryRepository.findByProductId(productId)
+                .orElseThrow(() -> new InventoryNotFoundException(productId));
     }
 
     private InventoryResponse mapToResponse(Inventory inventory) {

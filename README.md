@@ -156,6 +156,8 @@ docker-compose up --build
 | GET | `/api/inventory/{productId}/check` | Check if in stock |
 | PUT | `/api/inventory/{productId}/reduce?qty=` | Reduce stock |
 
+Stock is reduced with a single conditional `UPDATE ... WHERE quantity >= qty`, so concurrent orders for the last units can't oversell. Errors: `404` unknown product, `409` not enough stock, `400` invalid quantity.
+
 ## Sample Requests
 
 ### Register
